@@ -8,10 +8,10 @@ def deployWorkDir(http, sid, pattern, dir)
 end
 
 if $work_dir == nil
-   puts "MY_WORK_DIR is not set"
-   exit -1
+  puts "MY_WORK_DIR is not set"
+  exit -1
 else
-	puts "Work Dir: " + $work_dir 
+  puts "Work Dir: " + $work_dir
 end
 
 if ARGV.length != 1
@@ -22,34 +22,34 @@ end
 target = ARGV[0]
 
 if __FILE__ == $0
-   Net::HTTP.version_1_2
+  Net::HTTP.version_1_2
 
-   if target == 'mdb'
-      httpStartWithProxy ("www.vzasade.com") do |http|
-         login(http) do |sid|
-            deployWorkDir(http, sid, "*.*", '/mdb')
-            deployWorkDir(http, sid, "*.*", '/mdb/db_objects')
-            deployWorkDir(http, sid, "*.*", '/mdb/admin')
-            deployWorkDir(http, sid, "*.*", '/mdb/pages')
-            deployWorkDir(http, sid, "*.*", '/mdb/pics')
-            deployWorkDir(http, sid, "*.*", '/mdb/api')
-            deployWorkDir(http, sid, "*.*", '/mdb/style')
-         end
+  if target == 'mdb'
+    httpStartWithProxy ("www.vzasade.com") do |http|
+      login(http) do |sid|
+        deployWorkDir(http, sid, "*.*", '/mdb')
+        deployWorkDir(http, sid, "*.*", '/mdb/db_objects')
+        deployWorkDir(http, sid, "*.*", '/mdb/admin')
+        deployWorkDir(http, sid, "*.*", '/mdb/pages')
+        deployWorkDir(http, sid, "*.*", '/mdb/pics')
+        deployWorkDir(http, sid, "*.*", '/mdb/api')
+        deployWorkDir(http, sid, "*.*", '/mdb/style')
       end
-   elsif target == 'mdbapi'
-      httpStartWithProxy ("www.vzasade.com") do |http|
-         login(http) do |sid|
-            deployWorkDir(http, sid, "*", '/mdbapi/rest')
-            deployWorkDir(http, sid, "*.*", '/mdbapi/rest/controllers')
-         end
+    end
+  elsif target == 'mdbapi'
+    httpStartWithProxy ("www.vzasade.com") do |http|
+      login(http) do |sid|
+        deployWorkDir(http, sid, "*", '/mdbapi/rest')
+        deployWorkDir(http, sid, "*.*", '/mdbapi/rest/controllers')
       end
-   elsif target == 'deployment'
-      httpStartWithProxy ("www.vzasade.com") do |http|
-         login(http) do |sid|
-            deployWorkDir(http, sid, "*.php", '/deployment')
-         end
+    end
+  elsif target == 'deployment'
+    httpStartWithProxy ("www.vzasade.com") do |http|
+      login(http) do |sid|
+        deployWorkDir(http, sid, "*.php", '/deployment')
       end
-   else
-      puts 'Unknown target: ' + target           
-   end
+    end
+  else
+    puts 'Unknown target: ' + target
+  end
 end
