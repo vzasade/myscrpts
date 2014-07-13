@@ -55,7 +55,7 @@ end
 
 if ARGV.length != 1
   puts 'Incorrect number of arguments!'
-  puts 'USAGE: flac2mp3.rb <path to album dir>'
+  puts 'USAGE: ape2flac.rb <path to album dir>'
   exit -1
 end
 
