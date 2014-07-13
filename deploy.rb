@@ -2,7 +2,6 @@ require File.dirname(__FILE__) + '/../deployment/deploy_lib.rb'
 require File.dirname(__FILE__) + '/../deployment/http_proxy.rb'
 
 $work_dir = ENV['MY_WORK_DIR']
-puts File.join($work_dir, "mdb")
 
 def deployWorkDir(http, sid, pattern, dir)
   deployDir(http, sid, pattern, $work_dir + dir, dir)
@@ -33,7 +32,15 @@ if __FILE__ == $0
             deployWorkDir(http, sid, "*.*", '/mdb/admin')
             deployWorkDir(http, sid, "*.*", '/mdb/pages')
             deployWorkDir(http, sid, "*.*", '/mdb/pics')
+            deployWorkDir(http, sid, "*.*", '/mdb/api')
             deployWorkDir(http, sid, "*.*", '/mdb/style')
+         end
+      end
+   elsif target == 'mdbapi'
+      httpStartWithProxy ("www.vzasade.com") do |http|
+         login(http) do |sid|
+            deployWorkDir(http, sid, "*", '/mdbapi/rest')
+            deployWorkDir(http, sid, "*.*", '/mdbapi/rest/controllers')
          end
       end
    elsif target == 'deployment'
