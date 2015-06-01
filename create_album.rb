@@ -2,23 +2,16 @@ require 'rubygems'
 require 'net/http'
 require 'fileutils'
 require 'find'
-require File.dirname(__FILE__) + '/../deployment/http_proxy.rb'
 require File.dirname(__FILE__) + '/../deployment/deploy_lib.rb'
 require File.dirname(__FILE__) + '/mdb_common.rb'
 
 def setAlbumVar(album, key, value)
-  if value == nil then
-    puts key + " is not specified"
-    exit(0)
-  end
+  value != nil or raise key + " is not specified"
 
   if album[key] == nil then
     album[key] = value
   else
-    if album[key] != value then
-      puts key + " [" + value + "] does not match [" + album[key] + "."
-      exit(0)
-    end
+    album[key] == value or raise key + " [" + value + "] does not match [" + album[key] + "."
   end
 
   return album
@@ -110,8 +103,7 @@ def processFile(path, album)
     return album
   end
 
-  puts "Cannot read file."
-  exit(0)
+  raise "Cannot read file."
 end
 
 def processMp3(path, album)
