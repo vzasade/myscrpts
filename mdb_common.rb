@@ -3,31 +3,6 @@ require 'fileutils'
 require 'find'
 require 'taglib'
 
-def getExt(path)
-  ind = path.rindex('.')
-  if (ind == nil)
-    return null
-  end
-  if (ind >= path.length-1)
-    puts "Incorrect file name: " + path
-    exit(0)
-  end
-  return path[ind+1..path.length()-1]
-end
-
-def getFileName(nameWithExt)
-  ind = nameWithExt.rindex('.')
-  if (ind == nil)
-    return nameWithExt
-  end
-  
-  if (ind <= 0)
-    puts "Incorrect file name: " + nameWithExt
-    exit(0)
-  end
-  return nameWithExt[0..ind-1]
-end
-
 def dirName2Album(alb_name)
    ind = alb_name.index(' - ')
    if (ind == nil)
@@ -69,4 +44,3 @@ def getFlacRG(path)
   end
   return nil
 end
-
