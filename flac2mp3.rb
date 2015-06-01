@@ -4,106 +4,78 @@ require 'fileutils'
 require 'find'
 require 'uri'
 require 'taglib'
-require File.dirname(__FILE__) + '/../deployment/http_proxy.rb'
 require File.dirname(__FILE__) + '/mdb_common.rb'
 
-$wav_dir = ENV["MUSIC_TEMP_DIR"] + '\wav'
-$mp3_dir = ENV['MUSIC_TEMP_DIR'] + '\mp3'
-$flac_path = "\"" + ENV['FLAC_PATH'] + "\""
-$lame_path = "\"" + ENV['LAME_PATH'] + "\""
+$music_temp_dir = ENV["MUSIC_TEMP_DIR"] ? ENV["MUSIC_TEMP_DIR"] : "/tmp"
 
-def createDir(path)
-  if FileTest.directory?(path)
-    return
+$wav_dir = File.join($music_temp_dir, "wav")
+$mp3_dir = File.join($music_temp_dir, "mp3")
+$flac_path = ENV['FLAC_PATH'] ? "\"" + ENV['FLAC_PATH'] + "\"" : "flac"
+$lame_path = ENV['LAME_PATH'] ? "\"" + ENV['LAME_PATH'] + "\"" : "lame"
+
+def ensureDir(path)
+  unless FileTest.directory?(path)
+    puts "Creating directory " + path
+    FileUtils.mkdir_p(path)
   end
-  puts "Creating directory " + path
-  FileUtils.mkdir_p(path)
 end
 
-createDir($wav_dir)
+ensureDir($wav_dir)
 
-def getAlbumId(alb_name)
-  alb = dirName2Album(alb_name)
-  album = alb["artist"] + " - " + alb["name"]
+def apiGet(http, url)
+  request = Net::HTTP::Get.new(url)
+  response = http.request(request)
 
-  artist = URI.escape(alb["artist"], Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
-  name = URI.escape(alb["name"], Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
+  Net::HTTPSuccess === response or abort "Failed to retrirve " + yield
 
-  url = "/mdb/pages/get_album_id.php?artist=" + artist + "&name=" + name
-  #puts url
+  # the api has to be changed to issue correct code
+  response.body.to_s != "" or abort yield + " not found."
 
-  alb_id = nil
-  httpStartWithProxy ("www.vzasade.com") do |http|
-    reply = http.get(url)
-    if (Net::HTTPSuccess === reply)
-      alb_id = reply.body.to_s
-    else
-      puts reply
-    end
-  end
-  #  id = Net::HTTP.get URI.parse(url)
-
-  #puts "[[" + id + "]]"
-
-  if alb_id == ""
-    puts "Album " + album + " not found."
-    return nil
-  end
-
-  return alb_id
+  return response.body.to_s
 end
 
-def getPictureUrl(id)
-  url = "/mdb/pages/get_cover.php?row_id=" + id
-  picurl = nil
-  httpStartWithProxy ("www.vzasade.com") do |http|
-    reply = http.get(url)
-    if (Net::HTTPSuccess === reply)
-      picurl = reply.body.to_s
-    else
-      puts reply
-    end
+def queryAlbumId(http, artist, name)
+  artistEsc = URI.escape(artist, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
+  nameEsc = URI.escape(name, Regexp.new("[^#{URI::PATTERN::UNRESERVED}]"))
+
+  apiGet(http, "/mdb/pages/get_album_id.php?artist=" + artistEsc + "&name=" + nameEsc) do
+    "album " + artist + " - " + name
   end
-
-  if picurl == ""
-    return nil
-  end
-
-  puts picurl
-
-  return picurl
 end
 
-def downloadPicture(dir, alb_name)
-  filePath = dir + "\\mdb_cover.jpg";
+def getPictureUrl(http, id)
+  apiGet(http, "/mdb/pages/get_cover.php?row_id=" + id) do
+    "picture for " + id
+  end
+end
 
-  if File.exists?(filePath)
+def downloadFile(http, url, path)
+  resp = http.get(url)
+  resp.code < "300" or abort "Cannot download file from " + url
+
+  open(path, "wb") do |file|
+    file.write(resp.body)
+  end
+end
+
+def downloadPicture(dir, albName)
+  path = File.join(dir, "mdb_cover.jpg")
+  alb = dirName2Album(albName)
+
+  if File.exists?(path)
     puts "Picture is already downloaded"
-    return filePath
+    return path
   end
 
-  id = getAlbumId(alb_name)
-  if id ==  nil
-    puts "Picture not found"
-    exit(1)
+  Net::HTTP.start("www.vzasade.com") do |http|
+    id = queryAlbumId(http, alb["artist"], alb["name"])
+
+    url = getPictureUrl(http, id)
+    downloadFile(http, url, path)
+
+    puts "Picture downloaded to " + path
+    path
   end
-  url = getPictureUrl(id)
-
-  httpStartWithProxy ("www.vzasade.com") do |http|
-    resp = http.get(url)
-
-    index = resp.body.index("400 Bad Request")
-    if index != nil
-      puts "Can not download picture"
-      exit (-1)
-    end
-
-    open(filePath, "wb") do |file|
-      file.write(resp.body)
-    end
-    puts "Picture downloaded"
-  end
-  return filePath
 end
 
 def executeCommand(command)
@@ -123,13 +95,13 @@ end
 
 def createMp3Dir(dir)
   path = $mp3_dir + "\\" + dir
-  createDir(path)
+  ensureDir(path)
   return path
 end
 
 def createWav3Dir(dir)
   path = $wav_dir + "\\" + dir
-  createDir(path)
+  ensureDir(path)
   return path
 end
 
