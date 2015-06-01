@@ -3,15 +3,6 @@ require 'fileutils'
 require 'find'
 require 'taglib'
 
-def getLastPathElem(path)
-   ind = path.rindex('\\')
-   if (ind == nil) or (ind >= path.length-1)
-    puts "Incorrect path: " + path
-    exit(0)
-  end
-  return path[ind+1..path.length()-1]
-end
-
 def getExt(path)
   ind = path.rindex('.')
   if (ind == nil)

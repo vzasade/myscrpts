@@ -21,6 +21,7 @@ def ensureDir(path)
 end
 
 ensureDir($wav_dir)
+ensureDir($mp3_dir)
 
 def apiGet(http, url)
   request = Net::HTTP::Get.new(url)
@@ -94,19 +95,13 @@ def encodeMp3File(inpath, outpath)
 end
 
 def createMp3Dir(dir)
-  path = $mp3_dir + "\\" + dir
-  ensureDir(path)
-  return path
-end
-
-def createWav3Dir(dir)
-  path = $wav_dir + "\\" + dir
+  path = File.join($mp3_dir, dir)
   ensureDir(path)
   return path
 end
 
 def processDir(path)
-  albumDir = getLastPathElem(path)
+  albumDir = Pathname.new(path).basename
   puts "Processing Album: " + albumDir
 
   mp3DirPath = createMp3Dir(albumDir)
@@ -118,27 +113,23 @@ def processDir(path)
       next
     end
 
-    filePath = subdirPath.gsub('/', '\\')
-
-    fileFullName = getLastPathElem(filePath)
-    fileExt = getExt(fileFullName)
-    fileName = getFileName(fileFullName)
+    fileFullName = Pathname.new(filePath).basename
+    fileExt = fileFullName.extname
 
     mp3Path = nil
 
-    if (fileExt == 'mp3')
+    if (fileExt == '.mp3')
       puts "Processing: " + fileFullName;
       mp3Path = mp3DirPath + "\\" + fileFullName
 
       FileUtils.cp filePath, mp3Path
-    end
-
-    if (fileExt == 'flac')
+    elsif (fileExt == '.flac')
       puts "Processing: " + fileFullName;
-      mp3Path = mp3DirPath + "\\" + fileName + ".mp3"
 
-      #wavPath = createWav3Dir(albumDir) + "\\" + fileName + ".wav"
-      wavPath = $wav_dir + "\\tmp.wav"
+      fileName  = File.basename(fileFullName, ".*")
+      mp3Path = File.join(mp3DirPath, fileName + ".mp3")
+
+      wavPath = File.join($wav_dir, "tmp.wav")
       FileUtils.rm wavPath, :force => true
 
       decodeFlacFile(filePath, wavPath)
@@ -149,6 +140,8 @@ def processDir(path)
         printTag(tag)
         saveTagToMp3(mp3Path, tag)
       end
+    else
+      next
     end
 
     if mp3Path != nil

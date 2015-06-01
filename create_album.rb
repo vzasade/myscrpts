@@ -6,6 +6,15 @@ require File.dirname(__FILE__) + '/../deployment/http_proxy.rb'
 require File.dirname(__FILE__) + '/../deployment/deploy_lib.rb'
 require File.dirname(__FILE__) + '/mdb_common.rb'
 
+def getLastPathElem(path)
+   ind = path.rindex('\\')
+   if (ind == nil) or (ind >= path.length-1)
+    puts "Incorrect path: " + path
+    exit(0)
+  end
+  return path[ind+1..path.length()-1]
+end
+
 def setAlbumVar(album, key, value)
     if value == nil then
       puts key + " is not specified"
