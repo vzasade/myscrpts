@@ -5,11 +5,7 @@ require 'taglib'
 
 def dirName2Album(alb_name)
   ind = alb_name.index(' - ')
-  if (ind == nil)
-    puts "Incorrect album dir: " + alb_name
-    exit(0)
-  end
-
+  ind != nil or raise "Incorrect album dir: " + alb_name
   {"artist" => alb_name[0..ind-1], "name" => alb_name[ind+3..alb_name.length]}
 end
 
