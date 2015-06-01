@@ -6,15 +6,6 @@ require File.dirname(__FILE__) + '/../deployment/http_proxy.rb'
 require File.dirname(__FILE__) + '/../deployment/deploy_lib.rb'
 require File.dirname(__FILE__) + '/mdb_common.rb'
 
-def getLastPathElem(path)
-   ind = path.rindex('\\')
-   if (ind == nil) or (ind >= path.length-1)
-    puts "Incorrect path: " + path
-    exit(0)
-  end
-  return path[ind+1..path.length()-1]
-end
-
 def setAlbumVar(album, key, value)
   if value == nil then
     puts key + " is not specified"
@@ -97,7 +88,7 @@ def postprocess(album)
 end
 
 def processFile(path, album)
-  puts "Processing: " + getLastPathElem(path)
+  puts "Processing: " + Pathname.new(path).basename
 
   TagLib::FileRef.open(path) do |file|
     tag = file.tag;
@@ -144,7 +135,7 @@ def processFlac(path, album)
 end
 
 def processDir(path)
-  albumDir = getLastPathElem(path)
+  albumDir = Pathname.new(path).basename
   puts "Processing Album: " + albumDir
 
   album = dirName2Album(albumDir)
@@ -156,22 +147,16 @@ def processDir(path)
       next
     end
 
-    puts album
+    fileExt = Pathname.new(filePath).extname
 
-    filePath = subdirPath.gsub('/', '\\')
-
-    fileFullName = getLastPathElem(filePath)
-    fileExt = getExt(fileFullName)
-    fileName = getFileName(fileFullName)
-
-    if (fileExt == 'mp3' || fileExt == 'flac')
+    if (fileExt == '.mp3' || fileExt == '.flac')
       album = processFile(filePath, album)
 
-      if (fileExt == 'mp3')
+      if (fileExt == '.mp3')
         album = processMp3(filePath, album)
       end
 
-      if (fileExt == 'flac')
+      if (fileExt == '.flac')
         album = processFlac(filePath, album)
       end
     end
