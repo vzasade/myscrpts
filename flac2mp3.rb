@@ -61,7 +61,7 @@ end
 
 def downloadPicture(dir, albName)
   path = File.join(dir, "mdb_cover.jpg")
-  alb = dirName2Album(albName)
+  alb = dirName2Album(albName.to_s)
 
   if File.exists?(path)
     puts "Picture is already downloaded"
@@ -102,14 +102,14 @@ end
 
 def processDir(path)
   albumDir = Pathname.new(path).basename
-  puts "Processing Album: " + albumDir
+  puts "Processing Album: " + albumDir.to_s
 
   mp3DirPath = createMp3Dir(albumDir)
 
   picturePath = downloadPicture(path, albumDir)
 
-  Find.find(path) do |subdirPath|
-    if FileTest.directory?(subdirPath)
+  Find.find(path) do |filePath|
+    if FileTest.directory?(filePath)
       next
     end
 
@@ -124,7 +124,7 @@ def processDir(path)
 
       FileUtils.cp filePath, mp3Path
     elsif (fileExt == '.flac')
-      puts "Processing: " + fileFullName;
+      puts "Processing: " + fileFullName.to_s;
 
       fileName  = File.basename(fileFullName, ".*")
       mp3Path = File.join(mp3DirPath, fileName + ".mp3")
