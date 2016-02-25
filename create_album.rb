@@ -2,7 +2,7 @@ require 'rubygems'
 require 'net/http'
 require 'fileutils'
 require 'find'
-require File.dirname(__FILE__) + '/../deployment/deploy_lib.rb'
+require 'pathname'
 require File.dirname(__FILE__) + '/mdb_common.rb'
 
 def setAlbumVar(album, key, value)
@@ -81,7 +81,7 @@ def postprocess(album)
 end
 
 def processFile(path, album)
-  puts "Processing: " + Pathname.new(path).basename
+  puts "Processing: " + Pathname.new(path).basename.to_s
 
   TagLib::FileRef.open(path) do |file|
     tag = file.tag;
@@ -127,7 +127,7 @@ def processFlac(path, album)
 end
 
 def processDir(path)
-  albumDir = Pathname.new(path).basename
+  albumDir = Pathname.new(path).basename.to_s
   puts "Processing Album: " + albumDir
 
   album = dirName2Album(albumDir)
@@ -139,6 +139,7 @@ def processDir(path)
       next
     end
 
+    filePath = subdirPath
     fileExt = Pathname.new(filePath).extname
 
     if (fileExt == '.mp3' || fileExt == '.flac')
@@ -185,6 +186,7 @@ def processDir(path)
   end
 
   exit(0)
+
 end
 
 ######################################################

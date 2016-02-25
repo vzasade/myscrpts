@@ -1,6 +1,5 @@
 require 'fileutils'
-require File.dirname(__FILE__) + '/../deployment/deploy_lib.rb'
-require File.dirname(__FILE__) + '/../deployment/http_proxy.rb'
+require File.dirname(__FILE__) + '/upload.rb'
 
 if ARGV.length != 1
   puts 'Please specify target!'
