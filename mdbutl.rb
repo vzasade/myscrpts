@@ -1,16 +1,13 @@
 require 'net/http'
 require 'uri'
 require 'find'
-
-def getOneDiskPath(drive,disk)
-  return drive+':\\jukebox\\'+disk;
-end
+require 'pathname'
 
 def getDiskPath(disk)
-  drives = ['D','J','Z']
+  locations = ['J:\\VOL_1\\','J:\\VOL_2\\','J:\\VOL_3\\','D:\\music_archive\\']
 
-  for drive in drives
-    path = getOneDiskPath(drive,disk)
+  for prefix in locations
+    path = prefix + disk
     
     if (FileTest.directory?(path))
       return path
@@ -19,8 +16,17 @@ def getDiskPath(disk)
   return ''
 end
 
-  
-albums_text = Net::HTTP.get URI.parse('http://www.vzasade.com/mdb/pages/no_playlist_int.php') 
+def getPrefix(path)
+  if path.include? "VOL_1"
+    return '\\VOL_1\\'
+  elseif path.include? "VOL_2"
+    return '\\VOL_2\\'
+  else
+    return '\\VOL_3\\'
+  end
+end
+
+albums_text = Net::HTTP.get URI.parse('http://www.vzasade.com/mdb/pages/no_playlist_int.php')
 
 albums = albums_text.split('||')
 
@@ -28,68 +34,53 @@ last_disk_not_found = 0
 
 albums.each do |album_str|
   album = album_str.split('|')
-  
-  disk = album[3].to_s;
-  
-  while disk.length < 3 do
-    disk = '0' + disk
-  end
+
+  disk = album[3].to_s.rjust(3, '0')
 
   path = getDiskPath(disk)
-  
+
   if path == ''
-  
+
     if last_disk_not_found != disk
       last_disk_not_found = disk
       puts "DISK NOT FOUND: " + disk
     end
-    
+
   else
     m3uText = ''
     arrOfFiles = []
-    
-    pathToAlbum = path+"\\"+album[1]+' - '+album[2]
-    
+
+    albumDir = album[1]+' - '+album[2]
+    pathToAlbum = path + "\\" + albumDir
+
     if !FileTest.directory?(pathToAlbum)
       puts "ALBUM NOT FOUND: " + pathToAlbum;
     else
       puts pathToAlbum
 
+      prefix = getPrefix(path) + disk + "\\"
       Find.find(pathToAlbum) do |filePath|
-        if FileTest.directory?(filePath) 
-          next
-        end
-        
-        
-        if filePath.slice(filePath.length - 4, 4) != '.mp3' && filePath.slice(filePath.length - 5, 5) != '.flac'
+        if FileTest.directory?(filePath)
           next
         end
 
-        filePath = filePath.gsub('/', '\\')
-        filePath = filePath.gsub('D:\\', 'g:\\')
-        arrOfFiles << filePath.gsub('D:\\', 'G:\\')
+        pn = Pathname.new(filePath)
+
+        if pn.extname() != '.mp3' && pn.extname() != '.flac'
+          next
+        end
+
+        arrOfFiles << prefix + albumDir + "\\" + pn.basename().to_s
       end
 
       arrOfFiles = arrOfFiles.sort
       arrOfFiles.each do |fname|
         m3uText += fname + "\r\n"
       end
-      
-      
+
+
       if !m3uText.empty?
         postit = Net::HTTP.post_form(URI.parse('http://www.vzasade.com/mdb/pages/set_playlist_int.php'), {'action'=>'store', 'info'=>m3uText, 'row_id'=>album[0]})
-
-        locPath = 'j:\\playlists\\' + disk
-        Dir.mkdir(locPath) unless File.exists?(locPath)
-        
-        #create file in j:\playlists
-        locPath = 'j:\\playlists\\' + disk + '\\' +album[1]+' - '+album[2]+'.m3u'
-        File.open(locPath, 'w') do |f2|  
-          f2.puts(m3uText)
-        end
-        
-        #puts postit.body      
-        #puts m3uText
       end
     end
   end
