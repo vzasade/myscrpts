@@ -48,7 +48,7 @@ def setAlbumVar(album, key, value)
   if album[key] == nil then
     album[key] = value
   else
-    album[key] == value or raise key + " [" + value + "] does not match [" + album[key] + "."
+    album[key] == value or raise key + " [" + value.to_s + "] does not match [" + album[key].to_s + "."
   end
 
   return album
