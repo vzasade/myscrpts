@@ -4,11 +4,11 @@ require 'find'
 require 'pathname'
 
 def getDiskPath(disk)
-  locations = ['J:\\VOL_1\\','J:\\VOL_2\\','J:\\VOL_3\\','D:\\music_archive\\']
+  locations = ['E:\\jukebox\\VOL_1\\','E:\\jukebox\\VOL_2\\','E:\\jukebox\\VOL_3\\']
 
   for prefix in locations
     path = prefix + disk
-    
+
     if (FileTest.directory?(path))
       return path
     end
@@ -81,6 +81,7 @@ albums.each do |album_str|
 
       if !m3uText.empty?
         postit = Net::HTTP.post_form(URI.parse('http://www.vzasade.com/mdb/pages/set_playlist_int.php'), {'action'=>'store', 'info'=>m3uText, 'row_id'=>album[0]})
+        puts postit.body
       end
     end
   end

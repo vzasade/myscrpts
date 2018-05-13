@@ -3,6 +3,7 @@ require 'fileutils'
 require 'find'
 require 'taglib'
 require 'pathname'
+require 'yaml'
 
 def dirName2Album(alb_name)
   ind = alb_name.index(' - ')
@@ -10,39 +11,7 @@ def dirName2Album(alb_name)
   {"artist" => alb_name[0..ind-1], "name" => alb_name[ind+3..alb_name.length]}
 end
 
-def getMp3RG(path)
-  TagLib::MPEG::File.open(path) do |file|
-    tag = file.id3v2_tag
-
-    frames = tag.frame_list('TXXX')
-
-    frames.each do |frame|
-      if frame.field_list.size != 2 then next
-      elsif frame.field_list[0] != 'replaygain_album_gain' then next
-      else
-        return frame.field_list[1]
-      end
-    end
-  end
-  return nil
-end
-
-def getFlacRG(path)
-  TagLib::FLAC::File.open(path) do |file|
-    tag = file.xiph_comment
-    return nil if tag == nil
-    fields = tag.field_list_map
-
-    field = fields['REPLAYGAIN_ALBUM_GAIN']
-    if field == nil then
-      return nil
-    end
-    return field[0]
-  end
-  return nil
-end
-
-def setAlbumVar(album, key, value)
+def setCommonAlbumVar(album, key, value)
   value != nil or raise key + " is not specified"
 
   if album[key] == nil then
@@ -51,6 +20,25 @@ def setAlbumVar(album, key, value)
     album[key] == value or raise key + " [" + value.to_s + "] does not match [" + album[key].to_s + "."
   end
 
+  return album
+end
+
+def setMinMaxValues(album, min_field, max_field, value)
+  if album[min_field] != nil
+    if value < album[min_field].to_i
+      album[min_field] = value.to_s
+    end
+  else
+    album[min_field] = value.to_s
+  end
+
+  if album[max_field] != nil
+    if value > album[max_field].to_i
+      album[max_field] = value.to_s
+    end
+  else
+    album[max_field] = value.to_s
+  end
   return album
 end
 
@@ -117,8 +105,47 @@ def postprocess(album)
   return album
 end
 
+def processMp3ReplyGain(album, file)
+  tag = file.id3v2_tag
+  frames = tag.frame_list('TXXX')
+
+  frames.each do |frame|
+    next if frame.field_list.size != 2
+    if frame.field_list[0] == 'replaygain_album_gain'
+      album = setCommonAlbumVar(album, "gain", frame.field_list[1])
+    elsif frame.field_list[0] == 'replaygain_album_peak'
+      album = setCommonAlbumVar(album, "peak", frame.field_list[1])
+    end
+  end
+  return album
+end
+
+def getFlacFieldVal(fields, name)
+  field = fields[name]
+  return nil if field == nil
+  return field[0]
+end
+
+def processFlacReplyGain(album, file)
+  tag = file.xiph_comment
+  return nil if tag == nil
+  fields = tag.field_list_map
+
+  album = setCommonAlbumVar(album, "gain", getFlacFieldVal(fields, 'REPLAYGAIN_ALBUM_GAIN'))
+  return setCommonAlbumVar(album, "peak", getFlacFieldVal(fields, 'REPLAYGAIN_ALBUM_PEAK'))
+end
+
+def validateName(path)
+  name = File.basename(path, File.extname(path))
+  md = /\A\d\d-(\d|\w|[\!\;\,\. '\(\)\[\]-])*/.match(name)
+  if md[0] != name then
+     raise "Unsupported symbol after " + md[0]
+  end
+end
+
 def processFile(path, album)
   puts "Processing: " + Pathname.new(path).basename.to_s
+  validateName(path)
 
   TagLib::FileRef.open(path) do |file|
     tag = file.tag;
@@ -127,10 +154,24 @@ def processFile(path, album)
       puts "There's no tag on file."
       exit(0)
     end
+	
+	bitrate = file.audio_properties.bitrate
+	calc_bitrate = File.size(path) / (128 * file.audio_properties.length)
+	
+	# sometimes bitrate is just incorrect
+	# example: Miles Davis - Big Fun (LP)
+	if bitrate < calc_bitrate * 0.8 then
+		puts "Detected incorrect bitrate: " + bitrate.to_s
+		bitrate = calc_bitrate
+	end
 
-    album = setAlbumVar(album, "artist", tag.artist)
-    album = setAlbumVar(album, "name", tag.album)
-    album = setAlbumVar(album, "year", tag.year)
+    album = setCommonAlbumVar(album, "artist", tag.artist)
+    album = setCommonAlbumVar(album, "name", tag.album)
+    album = setCommonAlbumVar(album, "year", tag.year)
+    album = setMinMaxValues(album, "audio_bitrate_min", "audio_bitrate_max", bitrate)
+    album = setMinMaxValues(album, "audio_sample_rate_min", "audio_sample_rate_max", file.audio_properties.sample_rate)
+    puts "bitrate: " + bitrate.to_s
+	puts "length: " + file.audio_properties.length.to_s
 
     properties = file.audio_properties
     album["length"] = album["length"] + properties.length
@@ -144,22 +185,21 @@ def processFile(path, album)
 end
 
 def processMp3(path, album)
-  gain = getMp3RG(path)
-  album = setAlbumVar(album, "gain", gain)
-
-  TagLib::FileRef.open(path) do |file|
+  TagLib::MPEG::File.open(path) do |file|
     prop = file.audio_properties
+    album = setMinMaxValues(album, "audio_sample_width_min", "audio_sample_width_max", 16)
+    album = processMp3ReplyGain(album, file)
     album = setBitrate(album, prop.bitrate)
-    puts prop.bitrate
-    puts prop.length
   end
   return album
 end
 
 def processFlac(path, album)
-  gain = getFlacRG(path)
-  album = setAlbumVar(album, "gain", gain)
-  album = setBitrate(album, "FLAC")
+  TagLib::FLAC::File.open(path) do |file|
+    album = setMinMaxValues(album, "audio_sample_width_min", "audio_sample_width_max", file.audio_properties.sample_width)
+    album = processFlacReplyGain(album, file)
+    album = setBitrate(album, "FLAC")
+  end
   return album
 end
 

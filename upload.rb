@@ -44,18 +44,30 @@ def uploadPictures(num)
   num.is_integer? or raise "Album ID " + num + " is not numeric"
   num.size <= 6 or raise "Album ID " + num + " is too long"
 
-  num = num.rjust(6, '0')
-  dir1 = num.slice(0, 3).rjust(5, '0')
-  dir2 = num.slice(3, 3)
-
   Dir.chdir($pics_dir)
-  entries = Dir.glob('*.jpg').sort
+  entries = Dir.glob('*.jpg').sort.reverse
 
   if entries.size == 0 then
     puts "No pictures to upload"
     return
   end
 
+  doUploadPictures(entries, num, 1)
+end
+
+def doUploadPictures(entries, num, tries)
+  if tries == 10 then
+     panic "No more retries!"
+  end
+  
+  if tries > 1 then
+     puts "Try one more time"
+  end
+
+  num = num.rjust(6, '0')
+  dir1 = num.slice(0, 3).rjust(5, '0')
+  dir2 = num.slice(3, 3)
+  
   Net::FTP.open('www.vzasade.com', 'vzasade', 'bowie1984') do |ftp|
     ftp.chdir('public_html')
     ftp.chdir('mdb_data')
@@ -64,11 +76,29 @@ def uploadPictures(num)
     maybe_create_dir(ftp, dir1)
     maybe_create_dir(ftp, dir2)
 
-    entries.each do |name|
-      if file_changed(ftp, name) then
-        puts 'writing: ' + name
-        File.open(name) { |file| ftp.putbinaryfile(file, name) }
-      end
-    end
+	while entries.size > 0
+	  name = entries.pop
+	  if !uploadFile(ftp, name) then
+	    entries.push(name)
+		break
+	  end
+	end
   end
+  
+  if entries.size > 0 then
+    doUploadPictures(entries, num, tries + 1)
+  end
+end
+
+def uploadFile(ftp, name)
+  begin
+    if file_changed(ftp, name) then
+      puts 'writing: ' + name
+      File.open(name) { |file| ftp.putbinaryfile(file, name) }
+    end
+  rescue StandardError => e
+    puts "caught exception #{e}!"
+	return false
+  end
+  return true
 end

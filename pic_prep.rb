@@ -1,16 +1,40 @@
 require 'rubygems'
 require 'fileutils'
 
-if ARGV.length != 1
+if ARGV.length < 1
   puts 'Please specify dir!'
   exit -1
 end
 
+$defaultH = 800
+if ARGV.length > 1
+  h = ARGV[1].to_i
+  if h < 200 or h > 10000
+    puts 'not allowed default height ' + ARGV[1]
+    exit -1
+  end
+  puts 'changing default height to ' + ARGV[1]
+  $defaultH = h
+end
+
+$startCnt = 1
+if ARGV.length > 2
+  h = ARGV[2].to_i
+  if h < 1 or h > 99
+    puts 'not allowed starting counter ' + ARGV[2]
+    exit -1
+  end
+  puts 'starting files count from ' + ARGV[2]
+  $startCnt = h
+end
+
 src_dir = ARGV[0]
+
+puts 'process dir ' + ARGV[0]
 
 class FNameCounter
  def initialize()
-   @cntr = 1
+   @cntr = $startCnt
    @dest_dir = "c:\\music\\_pics"
 end
 
@@ -37,13 +61,13 @@ def getHeight(fname)
    fname = File.basename(fname, ext)
    fname = fname.slice(/xx[0-9]+$/)
    if (fname == nil)
-      return 800
+      return $defaultH
    end
    fname = fname.slice(2, fname.length - 2) #skip xx
    i = Integer(fname)
 
    if (i < 100 or i > 20000)
-      return 800
+      return $defaultH
    end
 
    return i
@@ -71,7 +95,7 @@ names.each do |f|
       height = getHeight(fname)
       new_name = fcntr.nextFname()
       # http://www.imagemagick.org/script/convert.php
-      cmdline = 'convert "' + fname + '" -quiet -quality 80 -resize "x' + height.to_s + '>" "' + new_name + '"'
+      cmdline = '"C:\Program Files\ImageMagick-6.9.3-Q16\convert.exe" "' + fname + '" -quiet -quality 80 -resize "x' + height.to_s + '>" "' + new_name + '"'
       puts 'execute: ' + cmdline
       system cmdline
       puts 'DONE'
