@@ -94,6 +94,10 @@ def postprocess(album)
 
   album.delete(:bitrate)
   album['bitrate'] = bitrate;
+  
+  if album['gain'] == nil
+    album['gain'] = "0"
+  end
 
   if album['gain'].end_with?(' dB')
     album['gain'] = album['gain'].slice(0, album['gain'].length() - 3)
