@@ -160,12 +160,15 @@ def processFile(path, album)
     end
 	
 	bitrate = file.audio_properties.bitrate
-	calc_bitrate = File.size(path) / (128 * file.audio_properties.length)
+	filesize = File.size(path)
+	calc_bitrate = filesize / (128 * file.audio_properties.length)
 	
 	# sometimes bitrate is just incorrect
-	# example: Miles Davis - Big Fun (LP)
+	#   in some cases it is because the big pic is attached to a small file
+	#   in some cases it is just wrong, though winamp shows it correctly
+	#      example: Miles Davis - Big Fun (LP)
 	if bitrate < calc_bitrate * 0.8 then
-		puts "Detected incorrect bitrate: " + bitrate.to_s
+		puts "Detected incorrect bitrate : %d vs %d = %d / (128 * %d), file = %s" % [bitrate, calc_bitrate, filesize, file.audio_properties.length, path]
 		bitrate = calc_bitrate
 	end
 
