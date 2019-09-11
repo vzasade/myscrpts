@@ -78,7 +78,6 @@ albums.each do |album_str|
         m3uText += fname + "\r\n"
       end
 
-
       if !m3uText.empty?
         postit = Net::HTTP.post_form(URI.parse('http://www.vzasade.com/mdb/pages/set_playlist_int.php'), {'action'=>'store', 'info'=>m3uText, 'row_id'=>album[0]})
         puts postit.body
