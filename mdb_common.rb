@@ -137,9 +137,9 @@ end
 
 def validateName(path)
   name = File.basename(path, File.extname(path))
-  md = /\A\d\d-(\d|\w|[\!\;\,\. '\(\)\[\]-])*/.match(name)
+  md = /\A\d\d-(\d|\w|[\&\#\!\;\,\. '\(\)\[\]\=\+-])*/.match(name)
   if md[0] != name then
-     raise "Unsupported symbol after " + md[0]
+     raise "Unsupported symbol after " + md[0] + " path = " + path
   end
 end
 
