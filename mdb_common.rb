@@ -177,8 +177,8 @@ def processFile(path, album)
     album = setCommonAlbumVar(album, "year", tag.year)
     album = setMinMaxValues(album, "audio_bitrate_min", "audio_bitrate_max", bitrate)
     album = setMinMaxValues(album, "audio_sample_rate_min", "audio_sample_rate_max", file.audio_properties.sample_rate)
-    puts "bitrate: " + bitrate.to_s
-	puts "length: " + file.audio_properties.length.to_s
+    # puts "bitrate: " + bitrate.to_s
+    # puts "length: " + file.audio_properties.length.to_s
 
     properties = file.audio_properties
     album["length"] = album["length"] + properties.length
@@ -212,7 +212,7 @@ end
 
 def processAlbum(path)
   albumDir = Pathname.new(path).basename.to_s
-  puts "Processing Album: " + albumDir
+  # puts "Processing Album: " + albumDir
 
   album = dirName2Album(albumDir)
   album["size"] = 0
@@ -240,6 +240,6 @@ def processAlbum(path)
   end
 
   album = postprocess(album)
-  puts album
+  # puts album
   return album
 end
