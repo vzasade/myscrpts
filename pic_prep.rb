@@ -95,7 +95,7 @@ names.each do |f|
       height = getHeight(fname)
       new_name = fcntr.nextFname()
       # http://www.imagemagick.org/script/convert.php
-      cmdline = '"C:\Program Files\ImageMagick-6.9.3-Q16\convert.exe" "' + fname + '" -quiet -quality 80 -resize "x' + height.to_s + '>" "' + new_name + '"'
+      cmdline = '"C:\Program Files\ImageMagick-7.0.8-Q16\convert.exe" "' + fname + '" -quiet -quality 80 -resize "x' + height.to_s + '>" "' + new_name + '"'
       puts 'execute: ' + cmdline
       system cmdline
       puts 'DONE'
