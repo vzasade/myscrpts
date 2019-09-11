@@ -3,8 +3,9 @@ require 'net/http'
 require File.dirname(__FILE__) + '/mdb_common.rb'
 require File.dirname(__FILE__) + '/upload.rb'
 
-def processDir(path)
+def processDir(path, action)
   album = processAlbum(path)
+  album["action"] = action
 
   x = Net::HTTP.post_form(URI.parse('http://www.vzasade.com/mdb/pages/api_create_album.php'), album)
 
@@ -41,10 +42,10 @@ end
 # Body
 ######################################################
 
-if ARGV.length != 1
+if ARGV.length != 2
   puts 'Incorrect number of arguments!'
-  puts 'USAGE: create_album.rb <path to album dir>'
+  puts 'USAGE: create_album.rb <path to album dir> <C/U>'
   exit -1
 end
 
-processDir(ARGV[0])
+processDir(ARGV[0], ARGV[1])
