@@ -148,9 +148,6 @@ def validateName(path)
 end
 
 def processFile(path, album)
-  puts "Processing: " + Pathname.new(path).basename.to_s
-  validateName(path)
-
   TagLib::FileRef.open(path) do |file|
     tag = file.tag;
 
@@ -227,6 +224,8 @@ def processAlbum(path)
     fileExt = Pathname.new(filePath).extname
 
     if (fileExt == '.mp3' || fileExt == '.flac')
+      puts "Processing: " + Pathname.new(filePath).basename.to_s
+      validateName(filePath)
       album = processFile(filePath, album)
 
       if (fileExt == '.mp3')
