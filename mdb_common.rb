@@ -158,19 +158,19 @@ def processFile(path, album)
       puts "There's no tag on file."
       exit(0)
     end
-	
-	bitrate = file.audio_properties.bitrate
-	filesize = File.size(path)
-	calc_bitrate = filesize / (128 * file.audio_properties.length)
-	
-	# sometimes bitrate is just incorrect
-	#   in some cases it is because the big pic is attached to a small file
-	#   in some cases it is just wrong, though winamp shows it correctly
-	#      example: Miles Davis - Big Fun (LP)
-	if bitrate < calc_bitrate * 0.8 then
-		puts "Detected incorrect bitrate : %d vs %d = %d / (128 * %d), file = %s" % [bitrate, calc_bitrate, filesize, file.audio_properties.length, path]
-		bitrate = calc_bitrate
-	end
+
+    bitrate = file.audio_properties.bitrate
+    filesize = File.size(path)
+    calc_bitrate = filesize / (128 * file.audio_properties.length)
+
+    # sometimes bitrate is just incorrect
+    #   in some cases it is because the big pic is attached to a small file
+    #   in some cases it is just wrong, though winamp shows it correctly
+    #      example: Miles Davis - Big Fun (LP)
+    if bitrate < calc_bitrate * 0.8 then
+      puts "Detected incorrect bitrate : %d vs %d = %d / (128 * %d), file = %s" % [bitrate, calc_bitrate, filesize, file.audio_properties.length, path]
+      bitrate = calc_bitrate
+    end
 
     album = setCommonAlbumVar(album, "artist", tag.artist)
     album = setCommonAlbumVar(album, "name", tag.album)
