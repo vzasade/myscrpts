@@ -119,7 +119,7 @@ def validateName(path)
 end
 
 def processTrack(track, album)
-  album = setCommonAlbumVar(album, "artist", track[:artist])
+  album = setCommonAlbumVar(album, "artist", track[:album_artist])
   album = setCommonAlbumVar(album, "name", track[:album])
   album = setCommonAlbumVar(album, "year", track[:year])
   album = setMinMaxValues(album, "audio_bitrate_min", "audio_bitrate_max", track[:bitrate])
